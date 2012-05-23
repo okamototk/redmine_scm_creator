@@ -22,12 +22,15 @@ module ScmRepositoriesHelperPatch
         def subversion_field_tags_with_add(form, repository)
             svntags = subversion_field_tags_without_add(form, repository)
 
-            if !@project.repository && SubversionCreator.enabled?
+            if (!@project.repository || repository.respond_to?('identifier') && (repository.identifier == nil) ) && SubversionCreator.enabled?
                 add = submit_tag(l(:button_create_new_repository), :onclick => "$('repository_operation').value = 'add';")
                 svntags['<br />'] = ' ' + add + '<br />'
                 svntags << hidden_field_tag(:operation, '', :id => 'repository_operation')
                 unless request.post?
                     path = SubversionCreator.access_root_url(SubversionCreator.default_path(@project.identifier))
+                    if @project.repository
+                        path << '.subrepo' + @project.repositories.size.to_s
+                    end
                     svntags << javascript_tag("$('repository_url').value = '#{escape_javascript(path)}';")
                 end
 
@@ -45,7 +48,7 @@ module ScmRepositoriesHelperPatch
         def mercurial_field_tags_with_add(form, repository)
             hgtags = mercurial_field_tags_without_add(form, repository)
 
-            if !@project.repository && MercurialCreator.enabled?
+            if (!@project.repository || repository.respond_to?('identifier') && (repository.identifier == nil) ) && MercurialCreator.enabled?
                 add = submit_tag(l(:button_create_new_repository), :onclick => "$('repository_operation').value = 'add';")
                 if hgtags.include?('<br />')
                     hgtags['<br />'] = ' ' + add + '<br />'
@@ -55,6 +58,9 @@ module ScmRepositoriesHelperPatch
                 hgtags << hidden_field_tag(:operation, '', :id => 'repository_operation')
                 unless request.post?
                     path = MercurialCreator.access_root_url(MercurialCreator.default_path(@project.identifier))
+                    if @project.repository
+                        path << '.subrepo' + @project.repositories.size.to_s
+                    end
                     hgtags << javascript_tag("$('repository_url').value = '#{escape_javascript(path)}';")
                 end
 
@@ -78,12 +84,15 @@ module ScmRepositoriesHelperPatch
         def bazaar_field_tags_with_add(form, repository)
             bzrtags = bazaar_field_tags_without_add(form, repository)
 
-            if !@project.repository && BazaarCreator.enabled?
+            if (!@project.repository || repository.respond_to?('identifier') && (repository.identifier == nil) ) && BazaarCreator.enabled?
                 add = submit_tag(l(:button_create_new_repository), :onclick => "$('repository_operation').value = 'add';")
                 bzrtags['</p>'] = ' ' + add + '</p>'
                 bzrtags << hidden_field_tag(:operation, '', :id => 'repository_operation')
                 unless request.post?
                     path = BazaarCreator.access_root_url(BazaarCreator.default_path(@project.identifier))
+                    if @project.repository
+                        path << '.subrepo' + @project.repositories.size.to_s
+                    end
                     bzrtags << javascript_tag("$('repository_url').value = '#{escape_javascript(path)}';")
                     if BazaarCreator.options['log_encoding']
                         bzrtags << javascript_tag("$('repository_log_encoding').value = '#{escape_javascript(BazaarCreator.options['log_encoding'])}';")
@@ -104,7 +113,7 @@ module ScmRepositoriesHelperPatch
         def git_field_tags_with_add(form, repository)
             gittags = git_field_tags_without_add(form, repository)
 
-            if !@project.repository && GitCreator.enabled?
+            if (!@project.repository || repository.respond_to?('identifier') && (repository.identifier == nil) ) && GitCreator.enabled?
                 add = submit_tag(l(:button_create_new_repository), :onclick => "$('repository_operation').value = 'add';")
                 if gittags.include?('<br />')
                     gittags['<br />'] = ' ' + add + '<br />'
@@ -114,6 +123,9 @@ module ScmRepositoriesHelperPatch
                 gittags << hidden_field_tag(:operation, '', :id => 'repository_operation')
                 unless request.post?
                     path = GitCreator.access_root_url(GitCreator.default_path(@project.identifier))
+                    if @project.repository
+                        path << '.subrepo' + @project.repositories.size.to_s
+                    end
                     gittags << javascript_tag("$('repository_url').value = '#{escape_javascript(path)}';")
                 end
 

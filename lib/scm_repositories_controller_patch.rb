@@ -8,7 +8,8 @@ module ScmRepositoriesControllerPatch
         base.class_eval do
             unloadable
             before_filter :delete_scm, :only => :destroy
-            alias_method :edit, :edit_with_add
+            alias_method :create, :create_with_add
+            alias_method_chain :edit, :add
         end
     end
 
@@ -22,6 +23,87 @@ module ScmRepositoriesControllerPatch
                 RAILS_DEFAULT_LOGGER.info "Deletion denied: #{@repository.root_url}"
                 render_403
             end
+        end
+
+        def create_repository (params)
+            if @repository.valid? && params[:operation].present? && params[:operation] == 'add'
+                attributes = params[:repository]
+                attrs = {}
+                extra = {}
+                attributes.each do |name, value|
+                   if name =~ %r{^extra_}
+                       extra[name] = value
+                   else
+                       attrs[name] = value
+                   end
+                end
+
+                if attrs
+
+                    begin
+                        interface = Object.const_get("#{params[:repository_scm]}Creator")
+ 
+                        name = interface.repository_name(attrs['url'])
+                        if name
+                            path = interface.path(name)
+                            if File.directory?(path)
+                                @repository.errors.add(:url, :already_exists)
+                            else
+                                RAILS_DEFAULT_LOGGER.info "Creating reporitory: #{path}"
+                                interface.execute(ScmConfig['pre_create'], path, @project) if ScmConfig['pre_create']
+                                if interface.create_repository(path)
+                                    interface.execute(ScmConfig['post_create'], path, @project) if ScmConfig['post_create']
+                                    @repository.created_with_scm = true
+                                    unless interface.copy_hooks(path)
+                                        RAILS_DEFAULT_LOGGER.warn "Hooks copy failed"
+                                    end
+                                else
+                                    RAILS_DEFAULT_LOGGER.error "Repository creation failed"
+                                end
+                            end
+
+                            @repository.root_url = interface.access_root_url(path)
+                            @repository.url = interface.access_url(path)
+
+                            if !interface.repository_name_equal?(name, @project.identifier)
+                                flash[:warning] = l(:text_cannot_be_used_redmine_auth)
+                            end
+                        else
+                            @repository.errors.add(:url, :should_be_of_format_local, :format => interface.repository_format)
+                        end
+
+                    rescue NameError
+                        RAILS_DEFAULT_LOGGER.error "Can't find interface for #{params[:repository_scm]}."
+                         @repository.errors.add_to_base(:scm_not_supported)
+                    end
+                end
+            end
+
+        end
+
+        #def create
+        #  @repository = Repository.factory(params[:repository_scm], params[:repository])
+        #  @repository.project = @project
+        #  if request.post? && @repository.save
+        #    redirect_to settings_project_path(@project, :tab => 'repositories')
+        #  else
+        #    render :action => 'new'
+        #  end
+        #end
+
+        def create_with_add
+          @repository = Repository.factory(params[:repository_scm], params[:repository])
+          @repository.project = @project
+          if request.post?
+
+            create_repository(params)
+
+            if @repository.save
+              redirect_to settings_project_path(@project, :tab => 'repositories')
+            end
+          else
+            render :action => 'new'
+          end
         end
 
         # Original function
@@ -56,8 +138,12 @@ module ScmRepositoriesControllerPatch
         #end
 
         def edit_with_add
+            if @project.respond_to?('repositories')
+                edit_without_add()
+                return
+            end
             @repository = @project.repository
-            if !@repository && !params[:repository_scm].blank?
+            if (!@repository || @project.respond_to?('repositories')) && !params[:repository_scm].blank?
                 @repository = Repository.factory(params[:repository_scm])
                 @repository.project = @project if @repository
             end
@@ -74,48 +160,8 @@ module ScmRepositoriesControllerPatch
                     end
                 end
                 @repository.attributes = attrs
-
-                if @repository.valid? && params[:operation].present? && params[:operation] == 'add'
-                    if attrs
-
-                        begin
-                            interface = Object.const_get("#{params[:repository_scm]}Creator")
-
-                            name = interface.repository_name(attrs['url'])
-                            if name
-                                path = interface.path(name)
-                                if File.directory?(path)
-                                    @repository.errors.add(:url, :already_exists)
-                                else
-                                    RAILS_DEFAULT_LOGGER.info "Creating reporitory: #{path}"
-                                    interface.execute(ScmConfig['pre_create'], path, @project) if ScmConfig['pre_create']
-                                    if interface.create_repository(path)
-                                        interface.execute(ScmConfig['post_create'], path, @project) if ScmConfig['post_create']
-                                        @repository.created_with_scm = true
-                                        unless interface.copy_hooks(path)
-                                            RAILS_DEFAULT_LOGGER.warn "Hooks copy failed"
-                                        end
-                                    else
-                                        RAILS_DEFAULT_LOGGER.error "Repository creation failed"
-                                    end
-                                end
-
-                                @repository.root_url = interface.access_root_url(path)
-                                @repository.url = interface.access_url(path)
-
-                                if !interface.repository_name_equal?(name, @project.identifier)
-                                    flash[:warning] = l(:text_cannot_be_used_redmine_auth)
-                                end
-                            else
-                                @repository.errors.add(:url, :should_be_of_format_local, :format => interface.repository_format)
-                            end
-
-                        rescue NameError
-                            RAILS_DEFAULT_LOGGER.error "Can't find interface for #{params[:repository_scm]}."
-                            @repository.errors.add_to_base(:scm_not_supported)
-                        end
-                    end
-                end
+                
+                create_repository(params)
 
                 if @repository.errors.empty?
                     @repository.merge_extra_info(extra) if @repository.respond_to?(:merge_extra_info)
@@ -125,7 +171,7 @@ module ScmRepositoriesControllerPatch
 
             render(:update) do |page|
                 page.replace_html("tab-content-repository", :partial => 'projects/settings/repository')
-                if @repository && !@project.repository
+                if @repository && (!@project.repository||@repository.respond_to?('identifier') && (@repository.identifier == nil))
                     @project.reload
                     page.replace_html("main-menu", render_main_menu(@project))
                 end
