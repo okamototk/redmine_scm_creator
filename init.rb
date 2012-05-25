@@ -1,5 +1,8 @@
 require 'redmine'
-require 'dispatcher'
+begin
+  require 'config/initializers/session_store.rb'
+rescue LoadError
+end
 
 require_dependency 'creator/scm_creator'
 require_dependency 'creator/subversion_creator'
@@ -10,11 +13,12 @@ require_dependency 'creator/bazaar_creator'
 require_dependency 'scm_config'
 require_dependency 'scm_hook'
 
-RAILS_DEFAULT_LOGGER.info 'Starting SCM Creator Plugin for Redmine'
+# RAILS_DEFAULT_LOGGER.info 'Starting SCM Creator Plugin for Redmine'
 
 ActiveRecord::Base.observers << :repository_observer
 
-Dispatcher.to_prepare :redmine_scm_plugin do
+#Dispatcher.to_prepare :redmine_scm_plugin do
+Rails.configuration.to_prepare do
     unless Project.included_modules.include?(ScmProjectPatch)
         Project.send(:include, ScmProjectPatch)
     end
