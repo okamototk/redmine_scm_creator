@@ -23,7 +23,7 @@ module ScmRepositoriesHelperPatch
             svntags = subversion_field_tags_without_add(form, repository)
 
             if repository.new_record? && SubversionCreator.enabled?
-                add = submit_tag(l(:button_create_new_repository), :onclick => "$('repository_operation').value = 'add';")
+                add = submit_tag("#{l(:button_create_new_repository)}", :onclick => "$('repository_operation').value = 'add';")
                 svntags['<br />'] = ' ' + add + '<br />'
                 svntags << hidden_field_tag(:operation, '', :id => 'repository_operation')
                 unless request.post?
@@ -49,7 +49,7 @@ module ScmRepositoriesHelperPatch
             hgtags = mercurial_field_tags_without_add(form, repository)
 
             if repository.new_record? && MercurialCreator.enabled?
-                add = submit_tag(l(:button_create_new_repository), :onclick => "$('repository_operation').value = 'add';")
+                add = submit_tag("#{l(:button_create_new_repository)}", :onclick => "$('repository_operation').value = 'add';")
                 if hgtags.include?('<br />')
                     hgtags['<br />'] = ' ' + add + '<br />'
                 else
@@ -85,7 +85,7 @@ module ScmRepositoriesHelperPatch
             bzrtags = bazaar_field_tags_without_add(form, repository)
 
             if repository.new_record? && BazaarCreator.enabled?
-                add = submit_tag(l(:button_create_new_repository), :onclick => "$('repository_operation').value = 'add';")
+                add = submit_tag("#{l(:button_create_new_repository)}", :onclick => "$('repository_operation').value = 'add';")
                 bzrtags['</p>'] = ' ' + add + '</p>'
                 bzrtags << hidden_field_tag(:operation, '', :id => 'repository_operation')
                 unless request.post?
@@ -114,7 +114,7 @@ module ScmRepositoriesHelperPatch
             gittags = git_field_tags_without_add(form, repository)
 
             if repository.new_record? && GitCreator.enabled?
-                add = submit_tag(l(:button_create_new_repository), :onclick => "$('repository_operation').value = 'add';")
+                add = submit_tag("#{l(:button_create_new_repository)}", :onclick => "$('repository_operation').value = 'add';")
                 if gittags.include?('<br />')
                     gittags['<br />'] = ' ' + add + '<br />'
                 else

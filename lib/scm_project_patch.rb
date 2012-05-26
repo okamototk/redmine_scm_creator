@@ -3,6 +3,7 @@ require_dependency 'project'
 module ScmProjectPatch
 
     def self.included(base)
+        Rails.logger.info("ScmProjectPatch:include")
         base.extend(ClassMethods)
         base.send(:include, InstanceMethods)
         base.class_eval do
@@ -32,6 +33,7 @@ module ScmProjectPatch
     module InstanceMethods
 
         def create_scm
+            Rails.logger.info("ScmProjectPatch:create_scm")        
             if @scm.present? && ScmConfig['auto_create']
                 @repository = Repository.factory(@scm)
                 if @repository

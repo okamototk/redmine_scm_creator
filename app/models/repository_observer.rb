@@ -1,5 +1,5 @@
 class RepositoryObserver < ActiveRecord::Observer
-
+    observe Repository
     def before_destroy(repository)
         if repository.created_with_scm
             project = repository.project

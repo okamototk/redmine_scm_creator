@@ -44,8 +44,14 @@ module ScmRepositoriesControllerPatch
             #end
 
             def create_with_add
-                @repository = Repository.factory(params[:repository_scm], params[:repository])
+                Rails.logger.info("scm_repositories_patch:create_with_add:" + params[:repository_scm].to_s + ":" + params[:repository].to_s)
+                attrs = pickup_extra_info
+                @repository = Repository.factory(params[:repository_scm], attrs[:attrs])
+#                @repository = Repository.factory(params[:repository_scm], params[:repository])
+#                @repository = Repository.factory("git", params[:repository])
+                Rails.logger.info("repository:"+ @repository.to_s)
                 if @repository
+                    Rails.logger.info("repository enable")
                     @repository.project = @project
 
                     if @repository.valid? && params[:operation].present? && params[:operation] == 'add'
@@ -138,6 +144,7 @@ module ScmRepositoriesControllerPatch
         end
 
         def scm_create_repository(repository, scm, url)
+            Rails.logger.info("scm_repositories_patch:scm_create_repository")        
             interface = Object.const_get("#{scm}Creator")
 
             name = interface.repository_name(url)
@@ -148,20 +155,26 @@ module ScmRepositoriesControllerPatch
                 else
                     Rails.logger.info "Creating reporitory: #{path}"
                     interface.execute(ScmConfig['pre_create'], path, @project) if ScmConfig['pre_create']
+                    Rails.logger.info "-----------2"
                     if interface.create_repository(path)
+                        Rails.logger.info "-----------3"
                         interface.execute(ScmConfig['post_create'], path, @project) if ScmConfig['post_create']
+                        Rails.logger.info "-----------4"
                         repository.created_with_scm = true
+                        Rails.logger.info "-----------5"
                         unless interface.copy_hooks(path)
+                            Rails.logger.info "-----------6"
                             Rails.logger.warn "Hooks copy failed"
                         end
                     else
                         Rails.logger.error "Repository creation failed"
                     end
                 end
-
+                Rails.logger.info "-----------7"
                 repository.root_url = interface.access_root_url(path)
+                Rails.logger.info "-----------8"
                 repository.url = interface.access_url(path)
-
+                Rails.logger.info "-----------9"
                 if !interface.repository_name_equal?(name, @project.identifier)
                     flash[:warning] = l(:text_cannot_be_used_redmine_auth)
                 end

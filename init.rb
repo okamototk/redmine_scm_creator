@@ -5,13 +5,16 @@ begin
 
     def dispatch(plugin, &block)
         Dispatcher.to_prepare(plugin, &block)
+        ActiveRecord::Base.observers << :repository_observer        
     end
 rescue LoadError # Rails 3
+#    require 'config/initializers/session_store.rb'
     def dispatch(plugin, &block)
         Rails.configuration.to_prepare(&block)
+        Rails.configuration.active_record.observers = :repository_observer
     end
 end
-
+  
 require_dependency 'creator/scm_creator'
 require_dependency 'creator/subversion_creator'
 require_dependency 'creator/mercurial_creator'
@@ -22,8 +25,6 @@ require_dependency 'scm_config'
 require_dependency 'scm_hook'
 
 Rails.logger.info 'Starting SCM Creator Plugin for Redmine'
-
-ActiveRecord::Base.observers << :repository_observer
 
 dispatch :redmine_scm_plugin do
     unless Project.included_modules.include?(ScmProjectPatch)
