@@ -26,7 +26,7 @@ require_dependency 'scm_hook'
 
 Rails.logger.info 'Starting SCM Creator Plugin for Redmine'
 
-dispatch :redmine_scm_plugin do
+dispatch :redmine_scm_creator do
     unless Project.included_modules.include?(ScmProjectPatch)
         Project.send(:include, ScmProjectPatch)
     end
@@ -38,11 +38,11 @@ dispatch :redmine_scm_plugin do
     end
 end
 
-Redmine::Plugin.register :redmine_scm_plugin do
+Redmine::Plugin.register :redmine_scm_creator do
     name 'SCM Creator'
     author 'Andriy Lesyuk'
     author_url 'http://www.andriylesyuk.com/'
     description 'Allows creating Subversion, Git, Mercurial and Bazaar repositories using Redmine.'
     url 'http://projects.andriylesyuk.com/projects/redmine-svn'
-    version '0.3.1'
+    version '0.4.0'
 end
