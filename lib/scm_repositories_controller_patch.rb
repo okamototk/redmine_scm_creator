@@ -44,14 +44,9 @@ module ScmRepositoriesControllerPatch
             #end
 
             def create_with_add
-                Rails.logger.info("scm_repositories_patch:create_with_add:" + params[:repository_scm].to_s + ":" + params[:repository].to_s)
                 attrs = pickup_extra_info
                 @repository = Repository.factory(params[:repository_scm], attrs[:attrs])
-#                @repository = Repository.factory(params[:repository_scm], params[:repository])
-#                @repository = Repository.factory("git", params[:repository])
-                Rails.logger.info("repository:"+ @repository.to_s)
                 if @repository
-                    Rails.logger.info("repository enable")
                     @repository.project = @project
 
                     if @repository.valid? && params[:operation].present? && params[:operation] == 'add'
@@ -144,7 +139,6 @@ module ScmRepositoriesControllerPatch
         end
 
         def scm_create_repository(repository, scm, url)
-            Rails.logger.info("scm_repositories_patch:scm_create_repository")        
             interface = Object.const_get("#{scm}Creator")
 
             name = interface.repository_name(url)
@@ -165,8 +159,10 @@ module ScmRepositoriesControllerPatch
                         Rails.logger.error "Repository creation failed"
                     end
                 end
+
                 repository.root_url = interface.access_root_url(path)
                 repository.url = interface.access_url(path)
+
                 if !interface.repository_name_equal?(name, @project.identifier)
                     flash[:warning] = l(:text_cannot_be_used_redmine_auth)
                 end

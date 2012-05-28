@@ -8,13 +8,12 @@ begin
         ActiveRecord::Base.observers << :repository_observer        
     end
 rescue LoadError # Rails 3
-#    require 'config/initializers/session_store.rb'
     def dispatch(plugin, &block)
         Rails.configuration.to_prepare(&block)
         Rails.configuration.active_record.observers = :repository_observer
     end
 end
-  
+
 require_dependency 'creator/scm_creator'
 require_dependency 'creator/subversion_creator'
 require_dependency 'creator/mercurial_creator'

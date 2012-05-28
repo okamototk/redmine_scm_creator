@@ -11,7 +11,6 @@ class ScmHook  < Redmine::Hook::ViewListener
                 row << label_tag('project[scm]', l(:field_scm) + (ScmConfig['auto_create'] == 'force' ? ' ' + content_tag(:span, '*', :class => 'required') : ''))
                 row << select_tag('project[scm]', project_scm_options_for_select(context[:request].params[:project] ? context[:request].params[:project][:scm] : nil))
                 row << '<br />' + content_tag(:em, l(:text_cannot_be_changed_later)) if ScmConfig['auto_create'] == 'force'
-                Rails.logger.info("view_projects_form:"+row.html_safe)
                 content_tag(:p, row.html_safe)
             else
                 if SubversionCreator.enabled?
