@@ -2,16 +2,15 @@ require 'redmine'
 
 begin
     require 'dispatcher'
-
     def dispatch(plugin, &block)
         Dispatcher.to_prepare(plugin, &block)
-        ActiveRecord::Base.observers << :repository_observer        
     end
+    ActiveRecord::Base.observers << :repository_observer        
 rescue LoadError # Rails 3
     def dispatch(plugin, &block)
         Rails.configuration.to_prepare(&block)
-        Rails.configuration.active_record.observers = :repository_observer
     end
+    Rails.configuration.active_record.observers << :repository_observer
 end
 
 require_dependency 'creator/scm_creator'
